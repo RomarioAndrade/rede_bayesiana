@@ -1,0 +1,233 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric}
+
+\newcommand{\Str}{\mathit{Str}}
+\newcommand{\Flw}{\mathit{Flw}}
+\newcommand{\Li}{\mathit{Li}}
+\newcommand{\snow}{\mathit{snow\_covered}}
+
+\title{2\textsuperscript{o} Trabalho de Inteligência Artificial\\[4pt]
+\large Raciocínio Probabilístico: rede bayesiana para diagnóstico\\
+de um farol de bicicleta movido a dínamo}
+\author{Romário Roberto de Pádua Andrade\\
+\small Instituto de Computação -- UFAM\\
+\small Prof. Edjard Mota}
+\date{11 de outubro de 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Enunciado resumido}
+
+Variáveis: $\Li$ (luz ligada), $\Str$ (condição da rua: \textit{dry}, \textit{wet},
+\textit{snow\_covered}), $\Flw$ (volante do dínamo desgastado), $R$ (dínamo deslizante),
+$V$ (dínamo mostra tensão), $B$ (lâmpada ok) e $K$ (cabo ok). Exceto $\Str$, todas
+assumem os valores $t/f$.
+
+São dadas as seguintes independências: $\Str$, $\Flw$, $B$ e $K$ são independentes aos
+pares; $(R,B)$, $(R,K)$, $(V,B)$ e $(V,K)$ são independentes; e valem
+\begin{align*}
+P(\Li \mid V, R) &= P(\Li \mid V), \\
+P(V \mid R, \Str) &= P(V \mid R), \\
+P(V \mid R, \Flw) &= P(V \mid R).
+\end{align*}
+
+\section*{(a) Rede bayesiana de causalidade}
+
+% Para usar o seu proprio desenho, comente o ambiente tikzpicture abaixo
+% e descomente a linha seguinte (ajustando o nome do arquivo):
+% \begin{center}\includegraphics[width=0.75\textwidth]{minha_rede.png}\end{center}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  no/.style={draw, ellipse, minimum width=1.6cm, minimum height=0.9cm},
+  >={Stealth[length=2.5mm]}, node distance=1.4cm and 1.6cm]
+  \node[no] (Str) {$\Str$};
+  \node[no, right=of Str] (Flw) {$\Flw$};
+  \node[no, below=of $(Str)!0.5!(Flw)$] (R) {$R$};
+  \node[no, below=of R] (V) {$V$};
+  \node[no, right=of V] (B) {$B$};
+  \node[no, right=of B] (K) {$K$};
+  \node[no, below=of B] (Li) {$\Li$};
+  \draw[->] (Str) -- (R);
+  \draw[->] (Flw) -- (R);
+  \draw[->] (R) -- (V);
+  \draw[->] (V) -- (Li);
+  \draw[->] (B) -- (Li);
+  \draw[->] (K) -- (Li);
+\end{tikzpicture}
+\caption{Rede bayesiana do farol de bicicleta movido a dínamo.}
+\end{figure}
+
+\noindent\textbf{Justificativa das arestas.}
+\begin{itemize}
+  \item $\Str$, $\Flw$, $B$ e $K$ são independentes aos pares; logo são nós raiz, sem
+        arestas entre si.
+  \item A condição da rua e o desgaste do volante são as causas do deslizamento do
+        dínamo: $\Str \to R$ e $\Flw \to R$.
+  \item Como $P(V \mid R, \Str) = P(V \mid R)$ e $P(V \mid R, \Flw) = P(V \mid R)$, o
+        único pai de $V$ é $R$: $R \to V$.
+  \item A tabela fornecida é $P(\Li \mid V, B, K)$ e, além disso,
+        $P(\Li \mid V, R) = P(\Li \mid V)$; logo os pais de $\Li$ são $V$, $B$ e $K$.
+  \item As independências $(R,B)$, $(R,K)$, $(V,B)$ e $(V,K)$ garantem que não há
+        arestas ligando $B$ ou $K$ a $R$ ou $V$.
+\end{itemize}
+
+\section*{(b) e (c) Tabelas de probabilidade condicional}
+
+A única CPT fornecida é a de $\Li$ (Tabela~\ref{tab:li}). Faltam as tabelas de
+$\Str$, $\Flw$, $B$, $K$, $R$ e $V$, preenchidas abaixo com valores plausíveis.
+Em todas as tabelas, $P(f) = 1 - P(t)$.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\multicolumn{2}{c}{Nós raiz} \\
+\midrule
+$P(\Str = \mathit{dry})$   & 0,70 \\
+$P(\Str = \mathit{wet})$   & 0,20 \\
+$P(\Str = \snow)$          & 0,10 \\
+\midrule
+$P(\Flw = t)$              & 0,10 \\
+$P(B = t)$                 & 0,95 \\
+$P(K = t)$                 & 0,97 \\
+\bottomrule
+\end{tabular}
+\qquad
+\begin{tabular}{llc}
+\toprule
+$\Str$ & $\Flw$ & $P(R = t \mid \Str, \Flw)$ \\
+\midrule
+\textit{dry}           & $f$ & 0,01 \\
+\textit{dry}           & $t$ & 0,20 \\
+\textit{wet}           & $f$ & 0,10 \\
+\textit{wet}           & $t$ & 0,50 \\
+\textit{snow\_covered} & $f$ & 0,40 \\
+\textit{snow\_covered} & $t$ & 0,90 \\
+\bottomrule
+\end{tabular}
+\caption{CPTs dos nós raiz e do nó $R$ (valores escolhidos).}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cc}
+\toprule
+$R$ & $P(V = t \mid R)$ \\
+\midrule
+$t$ & 0,10 \\
+$f$ & 0,99 \\
+\bottomrule
+\end{tabular}
+\qquad
+\begin{tabular}{cccc}
+\toprule
+$V$ & $B$ & $K$ & $P(\Li = t \mid V, B, K)$ \\
+\midrule
+$t$ & $t$ & $t$ & 0,99  \\
+$t$ & $t$ & $f$ & 0,01  \\
+$t$ & $f$ & $t$ & 0,01  \\
+$t$ & $f$ & $f$ & 0,001 \\
+$f$ & $t$ & $t$ & 0,3   \\
+$f$ & $t$ & $f$ & 0,005 \\
+$f$ & $f$ & $t$ & 0,005 \\
+$f$ & $f$ & $f$ & 0     \\
+\bottomrule
+\end{tabular}
+\caption{CPT do nó $V$ (valores escolhidos) e CPT do nó $\Li$ (dada no enunciado).}
+\label{tab:li}
+\end{table}
+
+\noindent\textbf{Critérios para a escolha dos valores.}
+\begin{itemize}
+  \item Defeitos são eventos raros: $P(\Flw = t)$ é baixo e $P(B = t)$, $P(K = t)$
+        são próximos de 1.
+  \item A probabilidade de o dínamo deslizar cresce com a piora da rua
+        (\textit{dry} $<$ \textit{wet} $<$ \textit{snow\_covered}) e é sempre maior
+        com o volante desgastado.
+  \item Um dínamo que desliza quase não gera tensão; um dínamo que não desliza gera
+        tensão quase sempre.
+\end{itemize}
+
+\section*{(d) A rede não contém a aresta $(\Str, \Li)$}
+
+Uma aresta $\Str \to \Li$ só seria necessária se $\Str$ continuasse a influenciar
+$\Li$ depois de conhecidos os pais de $\Li$. Isso não ocorre.
+
+\paragraph{Argumento causal.} A condição da rua não age diretamente sobre a luz. Ela
+apenas altera a chance de o dínamo deslizar ($R$), o que por sua vez altera a tensão
+($V$). Toda a influência passa pelo caminho $\Str \to R \to V \to \Li$.
+
+\paragraph{d-separação.} Esse é o único caminho entre $\Str$ e $\Li$, e ele é uma
+cadeia. Em uma cadeia, observar um nó intermediário bloqueia o caminho. Logo, dado
+$V$, as variáveis $\Str$ e $\Li$ são condicionalmente independentes:
+\[
+P(\Li \mid V, \Str) = P(\Li \mid V).
+\]
+
+\paragraph{Verificação pelo cálculo.} Como $B$ e $K$ são independentes de $V$ e de
+$\Str$,
+\[
+P(\Li \mid V, \Str) = \sum_{b}\sum_{k} P(\Li \mid V, b, k)\, P(b)\, P(k),
+\]
+e o lado direito não depende de $\Str$. Para $V = t$:
+\begin{align*}
+P(\Li = t \mid V = t, \Str)
+ &= 0{,}99 \cdot 0{,}95 \cdot 0{,}97 + 0{,}01 \cdot 0{,}95 \cdot 0{,}03 \\
+ &\quad + 0{,}01 \cdot 0{,}05 \cdot 0{,}97 + 0{,}001 \cdot 0{,}05 \cdot 0{,}03 \\
+ &= 0{,}912285 + 0{,}000285 + 0{,}000485 + 0{,}0000015 \\
+ &\approx 0{,}9131 ,
+\end{align*}
+valor idêntico para $\Str = \mathit{dry}$, $\mathit{wet}$ e $\snow$. Portanto a
+aresta $(\Str, \Li)$ não existe na rede.
+
+\paragraph{Observação.} Essa independência condicional é uma hipótese de modelagem,
+sustentada pela causalidade do sistema; o cálculo acima mostra que a rede é coerente
+com ela.
+
+\section*{(e) Cálculo de $P(V \mid \Str = \snow)$}
+
+Para abreviar, escreve-se $s$ para o evento $\Str = \snow$.
+\renewcommand{\snow}{s}
+
+\paragraph{Passo 1: marginalização sobre $R$.}
+\[
+P(V \mid \snow) = P(V \mid R, \snow)\, P(R \mid \snow)
+                + P(V \mid \neg R, \snow)\, P(\neg R \mid \snow).
+\]
+Usando $P(V \mid R, \Str) = P(V \mid R)$:
+\[
+P(V \mid \snow) = P(V \mid R)\, P(R \mid \snow) + P(V \mid \neg R)\, P(\neg R \mid \snow).
+\]
+
+\paragraph{Passo 2: cálculo de $P(R \mid \snow)$, marginalizando sobre $\Flw$.}
+Como $\Flw$ e $\Str$ são independentes, $P(\Flw \mid \snow) = P(\Flw)$. Assim,
+\begin{align*}
+P(R \mid \snow)
+ &= P(R \mid \snow, \Flw)\, P(\Flw) + P(R \mid \snow, \neg \Flw)\, P(\neg \Flw) \\
+ &= 0{,}90 \cdot 0{,}10 + 0{,}40 \cdot 0{,}90 \\
+ &= 0{,}09 + 0{,}36 = 0{,}45 ,
+\end{align*}
+e, portanto, $P(\neg R \mid \snow) = 1 - 0{,}45 = 0{,}55$.
+
+\paragraph{Passo 3: substituição.}
+\begin{align*}
+P(V \mid \snow) &= 0{,}10 \cdot 0{,}45 + 0{,}99 \cdot 0{,}55 \\
+                &= 0{,}045 + 0{,}5445 = 0{,}5895 .
+\end{align*}
+
+\paragraph{Resposta.} $P(V = t \mid \Str = \mathit{snow\_covered}) \approx 0{,}59$. Com a rua coberta de
+neve, o dínamo gera tensão em cerca de 59\% das vezes.
+
+\end{document}
